@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Expected a stable release tag, for example v0.1.0" >&2
+            exit 1
+          fi
+          echo "RELEASE_VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
+      - name: Build, test and stage release
+        run: >-
+          ./gradlew clean build releaseArtifacts
+          publishMavenJavaPublicationToLocalPreviewRepository
+          -PreleaseVersion="$RELEASE_VERSION" --console=plain
+      - name: Test published artifact
+        run: >-
+          ./gradlew -p examples/basic clean test
+          -PusePublishedArtifact -PreleaseVersion="$RELEASE_VERSION" --console=plain
+      - name: Verify checksums
+        working-directory: build/release
+        run: sha256sum --check SHA256SUMS
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: >-
+          gh release create "$RELEASE_TAG" build/release/*
+          --verify-tag --generate-notes --title "$RELEASE_TAG"

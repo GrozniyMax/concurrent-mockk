@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build and test library
+        run: ./gradlew clean build --console=plain
+      - name: Test consumer example
+        run: ./gradlew -p examples/basic test --console=plain
+      - name: Validate publication
+        run: ./gradlew releaseArtifacts publishMavenJavaPublicationToLocalPreviewRepository --console=plain
+      - name: Test Maven publication as a consumer
+        run: ./gradlew -p examples/basic clean test -PusePublishedArtifact --console=plain
