@@ -2,30 +2,34 @@
 
 Подготовлены два канала: GitHub Releases для скачивания файлов и JitPack для подключения зависимости из Gradle/Maven. Maven Central не настроен. Публичный репозиторий: [GrozniyMax/concurrent-mockk](https://github.com/GrozniyMax/concurrent-mockk). Первый релиз: [v0.1.0](https://github.com/GrozniyMax/concurrent-mockk/releases/tag/v0.1.0). JitPack собирает зависимость по опубликованному тегу при первом запросе.
 
+## Новый режим 0.2.0-SNAPSHOT
+
+Релиз v0.1.0 содержит прежнюю обёртку. Для интеграции со стандартным MockK и изолированными static mocks используйте текущую main или её SHA из JitPack. В показанных ниже примерах установки замените v0.1.0 на main-SNAPSHOT (или SHA), затем включите junit.jupiter.extensions.autodetection.enabled=true. Пакет и стандартные импорты тестов описаны в [README](../README.md). Новый стабильный релиз пока не выпущен.
+
 ## Версии
 
-Версия разработки задаётся в gradle.properties: projectVersion=0.1.0-SNAPSHOT. Для стабильного релиза используйте тег vMAJOR.MINOR.PATCH. Workflow удаляет префикс v и передаёт версию в Gradle через -PreleaseVersion. Исходники Kotlin остаются в пакете com.grozniy.
+Версия разработки задаётся в gradle.properties: projectVersion=0.2.0-SNAPSHOT. Для стабильного релиза используйте тег vMAJOR.MINOR.PATCH. Workflow удаляет префикс v и передаёт версию в Gradle через -PreleaseVersion. Исходники Kotlin остаются в пакете com.grozniy.
 
 На JitPack группа и версия берутся из его переменных GROUP и VERSION. Для репозитория GrozniyMax/concurrent-mockk и тега v0.1.0 координаты com.github.GrozniyMax:concurrent-mockk:v0.1.0. Локальные публикации сохраняют группу com.grozniy.
 
 ## Проверка до публикации
 
 ```sh
-./gradlew clean build releaseArtifacts publishMavenJavaPublicationToLocalPreviewRepository -PreleaseVersion=0.1.0
+./gradlew clean build releaseArtifacts publishMavenJavaPublicationToLocalPreviewRepository -PreleaseVersion=0.2.0
 ./gradlew -p examples/basic clean test -PusePublishedArtifact -PreleaseVersion=0.1.0
 ```
 
 В build/release появятся JAR, sources JAR, POM и SHA256SUMS. Локальный Maven-репозиторий находится в build/repository. Второй запуск подключает артефакт из этого репозитория без composite build и проверяет транзитивные зависимости.
 
-## Выпуск
+## Выпуск следующей версии
 
 1. Используйте публичный репозиторий [GrozniyMax/concurrent-mockk](https://github.com/GrozniyMax/concurrent-mockk); workflow GitHub Actions уже загружен.
 2. Обновите CHANGELOG.md и выполните проверки выше.
 3. Закоммитьте изменения, отправьте ветку и создайте новый тег:
 
 ```sh
-git tag -a v0.1.0 -m "Release 0.1.0"
-git push origin v0.1.0
+git tag -a v0.2.0 -m "Release 0.2.0"
+git push origin v0.2.0
 ```
 
 Workflow .github/workflows/release.yml проверяет тег, собирает библиотеку, выполняет её тесты и тесты потребителя, проверяет контрольные суммы и создаёт GitHub Release с артефактами. Используется стандартный GITHUB_TOKEN с contents: write; отдельный секрет для GitHub Releases не нужен. Workflow ожидает существующий тег (--verify-tag). Уже выпущенные теги не передвигайте: исправления выпускайте новой версией.

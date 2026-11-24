@@ -1,6 +1,11 @@
 # История изменений
 
-## Unreleased
+## Unreleased — 0.2.0-SNAPSHOT
+
+- Автоматическая интеграция с io.mockk.mockk, стандартными аннотациями и MockKExtension через ServiceLoader.
+- Контекст до конструктора теста, scoped registry и отдельный кэш внедрения MockKExtension.
+- Независимые Java static и Kotlin top-level mocks, адресные clear/unmock и восстановление оригинального метода.
+- Регрессионные тесты параллельной работы, lifecycle, статической отмены и ошибок создания экземпляра.
 
 ## 0.1.0 — 2026-11-24
 

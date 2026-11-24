@@ -2,92 +2,53 @@
 
 [![CI](https://github.com/GrozniyMax/concurrent-mockk/actions/workflows/ci.yml/badge.svg)](https://github.com/GrozniyMax/concurrent-mockk/actions/workflows/ci.yml)
 
-Небольшая Kotlin/JVM-библиотека для изоляции моков при параллельном запуске тестов JUnit 5. Пакет: `com.grozniy`.
+Изоляция MockK для параллельных тестов JUnit 5. Пакет библиотеки — `com.grozniy`; в тестах используются стандартные импорты `io.mockk` и стандартный `MockKExtension`.
 
-Тесты используют `mockk<T>()`, `every` и `verify`. Расширение самостоятельно создаёт контекст теста, регистрирует моки и очищает их после завершения. Передавать контекст параметром или закрывать его вручную не требуется.
+**Новый режим: `0.2.0-SNAPSHOT` в main.** Опубликованный [v0.1.0](https://github.com/GrozniyMax/concurrent-mockk/releases/tag/v0.1.0) содержит прежний API с `com.grozniy.mockk` и собственным расширением. Для описанной ниже интеграции используйте текущий исходный код или JitPack `main-SNAPSHOT`. Лицензия — [MIT](LICENSE).
 
-**Релиз:** [v0.1.0](https://github.com/GrozniyMax/concurrent-mockk/releases/tag/v0.1.0). Версия разработки: `0.1.0-SNAPSHOT`. Артефакт пока не опубликован в Maven Central. **Лицензия:** [MIT](LICENSE).
+## Что делает библиотека
 
-## Задача проекта
-
-При параллельном запуске тестов глобальная очистка моков может затронуть ещё выполняющийся тест. Проект исследует управление жизненным циклом моков: каждый тест владеет своими экземплярами, а очистка работает только с ними.
-
-Внутри используются JUnit ExtensionContext.Store, ThreadLocal для доступа к текущему контексту и синхронизация реестра. Это обёртка над MockK; она не меняет его внутренности и не изолирует глобальные object/static-моки.
+- Автоматически открывает контекст до создания экземпляра теста: работают обычные поля `val x = mockk<T>()`, `@MockK`, `@RelaxedMockK`, `@SpyK` и `@InjectMockKs`.
+- Учитывает обычные, дочерние и статические моки каждого теста. Настройка, история вызовов и массовые проверки не смешиваются с соседними тестами.
+- Ограничивает `clearAllMocks()`, `confirmVerified()` и `checkUnnecessaryStub()` текущим тестом, включая вызовы из стандартного `MockKExtension`.
+- Изолирует внутренний кэш внедрения `MockKExtension`, чтобы `@InjectMockKs` не получал параметр соседнего параллельного теста.
+- Поддерживает параллельное мокирование одного Java static-метода или Kotlin top-level-функции с разными ответами. `unmockkStatic()` и `unmockkAll()` отменяют только моки текущего теста.
 
 ## Быстрый старт
 
-Нужен установленный JDK 17. Gradle 8.12.1 загружается Wrapper-скриптом. Из корня проекта:
+Нужен JDK 17. В папке проекта:
 
 ```sh
 ./gradlew clean build
 ./gradlew -p examples/basic test
 ```
 
-На Windows используйте `gradlew.bat`. Библиотека и исходники появятся в `build/libs/`, отчёт тестов — в `build/reports/tests/test/index.html`.
+На Windows используйте `gradlew.bat`. Gradle Wrapper загружает Gradle 8.12.1.
 
-## Релизы и подключение через Gradle/Maven
+## Подключение без изменения тестовых аннотаций
 
-Добавлен workflow релизов по тегам `vMAJOR.MINOR.PATCH`: JAR, исходники, POM и SHA-256. Для удалённого подключения подготовлен JitPack; [публичный репозиторий](https://github.com/GrozniyMax/concurrent-mockk) создан, релизные файлы доступны в [GitHub Releases](https://github.com/GrozniyMax/concurrent-mockk/releases). Примеры Gradle и Maven, команды выпуска и проверки описаны в [инструкции по релизам](docs/releases.md).
-
-## Локальное подключение
-
-Разместите библиотеку рядом со своим проектом и добавьте в его `settings.gradle.kts`:
+Для локальной разработки добавьте в `settings.gradle.kts` потребителя:
 
 ```kotlin
 includeBuild("../concurrent-mockk")
 ```
 
-В `build.gradle.kts` проекта-потребителя:
+И в его `build.gradle.kts`:
 
 ```kotlin
 repositories { mavenCentral() }
-
 dependencies {
-    testImplementation("com.grozniy:concurrent-mockk:0.1.0-SNAPSHOT")
+    testImplementation("com.grozniy:concurrent-mockk:0.2.0-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.12.2")
 }
-
 tasks.test { useJUnitPlatform() }
 ```
 
-Рабочий пример с composite build: [examples/basic](examples/basic). Альтернатива — выполнить `./gradlew publishToMavenLocal` и использовать `mavenLocal()` в проекте-потребителе.
-
-## Использование без явного контекста
-
-```kotlin
-import com.grozniy.IsolatedMockKExtension
-import com.grozniy.mockk
-import io.mockk.every
-import io.mockk.verify
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-
-interface Repository { fun find(): String }
-
-@ExtendWith(IsolatedMockKExtension::class)
-class RepositoryTest {
-    @Test
-    fun example() {
-        val repository = mockk<Repository>(name = "repository") {
-            every { find() } returns "result"
-        }
-        assertEquals("result", repository.find())
-        verify(exactly = 1) { repository.find() }
-    }
-}
-```
-
-Используйте **`com.grozniy.mockk` вместо `io.mockk.mockk`**: оригинальная функция не регистрирует моки в этом расширении. `every` и `verify` остаются из MockK. Поддерживаются параметры `name`, `relaxed`, `relaxUnitFun` и блок настройки.
-
-Для полей объявляйте `lateinit var` и создавайте моки в `@BeforeEach`, как в [примере](examples/basic/src/test/kotlin/com/grozniy/example/GreetingServiceTest.kt). Стандартный `MockKExtension` одновременно подключать не нужно. Явный API `MockContext` сохранён для ручного управления, но в обычном тесте не нужен.
-
-## Параллельный запуск
-
-В проекте-потребителе создайте `src/test/resources/junit-platform.properties`:
+В `src/test/resources/junit-platform.properties` включите автообнаружение и параллельный запуск:
 
 ```properties
+junit.jupiter.extensions.autodetection.enabled=true
 junit.jupiter.execution.parallel.enabled=true
 junit.jupiter.execution.parallel.mode.default=concurrent
 junit.jupiter.execution.parallel.mode.classes.default=concurrent
@@ -95,39 +56,79 @@ junit.jupiter.execution.parallel.config.strategy=fixed
 junit.jupiter.execution.parallel.config.fixed.parallelism=4
 ```
 
-Используйте стандартный жизненный цикл `PER_METHOD` и отдельные моки каждого теста. Разные тесты могут работать одновременно; каждый отдельный тест и его callbacks должны оставаться в одном потоке.
+JAR уже содержит ServiceLoader-регистрацию. Добавлять `@ExtendWith(MockKIsolationExtension::class)` или менять импорты `mockk` не нужно. Существующий стандартный `@ExtendWith(MockKExtension::class)` сохраняется, если используются аннотации MockK.
 
-## Гарантии и ограничения
+```kotlin
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
-| Поддерживается | Ограничение |
-| --- | --- |
-| Отдельный контекст каждого запуска теста | Общие моки между тестами не изолируются |
-| Создание в тесте, `@BeforeEach`, `@AfterEach` | В инициализаторе поля, конструкторе, `@BeforeAll` и вне теста будет `IllegalStateException` |
-| Очистка после ошибки теста или настройки мока | Глобальная очистка из стороннего кода может затронуть соседние тесты |
-| Повторное использование потока и вложенный запуск JUnit | Перенос в корутины и дочерние потоки не поддерживается |
-| Обычные экземпляры моков через `com.grozniy.mockk` | Нет автоматической обработки `@MockK`, object/static/constructor mocking и spy API |
+interface Repository { fun find(): String }
 
-Очистка сбрасывает ответы и историю вызовов через `clearMocks` только у собственных моков; `clearAllMocks` и `unmockkAll` не вызываются. Она освобождает ссылки реестра проекта, но не обещает удаления внутренних ссылок или отмены инструментации MockK. Ошибка очистки не скрывает исходную ошибку теста.
+@ExtendWith(MockKExtension::class)
+class RepositoryTest {
+    @MockK lateinit var repository: Repository
+    private val local = mockk<Repository>()
 
-Таймауты с переключением потока (`assertTimeoutPreemptively`, `@Timeout` с `SEPARATE_THREAD`) не поддерживаются.
+    @Test fun example() {
+        every { repository.find() } returns "annotated"
+        every { local.find() } returns "local"
+        assertEquals("annotated", repository.find())
+        assertEquals("local", local.find())
+        verify(exactly = 1) { repository.find(); local.find() }
+    }
+}
+```
 
-## Проверки и устройство проекта
+Рабочий [пример](examples/basic/src/test/kotlin/com/grozniy/example/GreetingServiceTest.kt) дополнительно мокирует top-level-функцию через стандартный `mockkStatic`.
 
-Интеграционные тесты запускают настоящий JUnit Launcher с двумя рабочими потоками. Барьер подтверждает перекрытие выполнения, а второй тест проверяет свои ответы и историю после завершения и очистки первого. Все ожидания ограничены таймаутами; `Thread.sleep` не используется.
+## Статические моки
 
-Также проверяются ошибки настройки и lifecycle, очистка после падения теста, повторное закрытие, повторные запуски, переиспользование потока и восстановление контекста после вложенного запуска JUnit.
+Используйте обычные `mockkStatic(JavaClass::class)` или `mockkStatic(::topLevelFunction)`, затем `every` и `verify`. Класс инструментируется один раз, а вызов направляется к ответам текущего теста. Настройки, проверки, `clearStaticMockk`, `unmockkStatic` и блоковая форма `mockkStatic { ... }` работают с его состоянием.
 
-- `src/main/kotlin/com/grozniy` — библиотека.
-- `src/test/kotlin/com/grozniy` — модульные и интеграционные проверки.
-- `examples/basic` — отдельный проект-потребитель с параллельными тестами.
-- `.github/workflows/ci.yml` — сборка, тесты библиотеки и примера, проверка публикации.
-- [Архитектура](docs/architecture.md) — жизненный цикл и принятые решения.
-- [Разработка](CONTRIBUTING.md) — команды проверки и требования к изменениям.
+После освобождения последнего контекста статический прокси снимается. Поток без контекста видит оригинальную реализацию даже тогда, когда другие тесты мокируют метод. Уже активный статический мок, созданный вне изолированного теста, нельзя одновременно использовать для того же класса в изолированном режиме: создание завершается понятной ошибкой.
+
+## Совместимость и границы
+
+Интеграция инструментирует внутренние классы MockK через Byte Buddy. Поддерживаемая версия **MockK 1.14.6** закреплена строгим ограничением Gradle; JUnit **5.12.2**, JDK **17+**. В Maven не переопределяйте MockK на другую версию. Если JVM запрещает динамическое подключение агента, его необходимо разрешить; на новых JVM может потребоваться `-XX:+EnableDynamicAgentLoading`.
+
+- Требуется `PER_METHOD`. `PER_CLASS` отклоняется до создания общих моков.
+- Один тест и его lifecycle работают в одном потоке. Передача контекста в корутины/Executor и preemptive-таймауты не поддерживаются.
+- `@TestFactory` с динамическими тестами отклоняется: JUnit не предоставляет отдельный lifecycle каждого такого теста.
+- `mockkObject` и `mockkConstructor` отклоняются в изолированном контексте. Изоляция этих глобальных механизмов пока не реализована.
+- Моки из `@BeforeAll`, общие моки между тестами и конкурентное смешивание изолированного и обычного static mocking не поддерживаются.
+- За пределами контекста сохраняется обычное поведение MockK. Глобальная очистка вне интеграции может затронуть обычные моки работающего теста.
+
+Прежние `MockContext`, `com.grozniy.mockk` и `IsolatedMockKExtension` сохранены для совместимости. В новом режиме они не требуются.
+
+## Установка через JitPack
+
+Текущая ветка доступна как изменяемый snapshot; для воспроизводимых сборок используйте SHA коммита вместо `main-SNAPSHOT`:
+
+```kotlin
+repositories {
+    mavenCentral()
+    maven { url = uri("https://jitpack.io") }
+}
+dependencies {
+    testImplementation("com.github.GrozniyMax:concurrent-mockk:main-SNAPSHOT")
+}
+```
+
+Автообнаружение JUnit включается так же, как показано выше. Инструкция для [Gradle, Maven и релизов](docs/releases.md). Версия `v0.1.0` новый режим не содержит.
+
+## Проверки и устройство
+
+Интеграционные тесты запускают настоящий JUnit Launcher с двумя потоками. Барьеры и latch подтверждают перекрытие выполнения, разные ответы одного static-метода и сохранность соседнего теста после очистки. Проверяются constructor/parameter/field injection, дочерние моки, массовые проверки, ошибки конструктора/setup/теста и вложенный запуск JUnit. `Thread.sleep` не используется.
+
+- [Архитектура](docs/architecture.md).
+- [Разработка](CONTRIBUTING.md).
 - [История изменений](CHANGELOG.md).
+- [Пример-потребитель](examples/basic).
 
-## Следующие шаги
-
-- Рассмотреть поддержку аннотированных полей `@MockK`.
-- Отдельно исследовать перенос контекста между потоками и корутинами.
-
-Эти возможности пока не реализованы. Проект использует Kotlin 2.1.20, MockK 1.14.6 и JUnit 5.12.2.
+Отчёт: `build/reports/tests/test/index.html`. CI проверяет сборку, пример и получение Maven-артефакта без composite build.

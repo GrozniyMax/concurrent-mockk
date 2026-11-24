@@ -25,7 +25,10 @@ kotlin { jvmToolchain(17) }
 java { withSourcesJar() }
 
 dependencies {
-    api("io.mockk:mockk:1.14.6")
+    api("io.mockk:mockk-jvm:1.14.6") { version { strictly("1.14.6") } }
+    implementation("io.mockk:mockk-agent-api-jvm:1.14.6")
+    implementation("net.bytebuddy:byte-buddy:1.15.11")
+    implementation("net.bytebuddy:byte-buddy-agent:1.15.11")
     api("org.junit.jupiter:junit-jupiter-api:5.12.2")
     testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
     testImplementation("org.junit.platform:junit-platform-launcher:1.12.2")
