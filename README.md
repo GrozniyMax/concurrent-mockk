@@ -6,7 +6,7 @@
 
 Тесты используют `mockk<T>()`, `every` и `verify`. Расширение самостоятельно создаёт контекст теста, регистрирует моки и очищает их после завершения. Передавать контекст параметром или закрывать его вручную не требуется.
 
-**Статус:** pet-проект, `0.1.0-SNAPSHOT`. Артефакт пока не опубликован в Maven Central. **Лицензия:** [MIT](LICENSE).
+**Релиз:** [v0.1.0](https://github.com/GrozniyMax/concurrent-mockk/releases/tag/v0.1.0). Версия разработки: `0.1.0-SNAPSHOT`. Артефакт пока не опубликован в Maven Central. **Лицензия:** [MIT](LICENSE).
 
 ## Задача проекта
 
@@ -27,7 +27,7 @@
 
 ## Релизы и подключение через Gradle/Maven
 
-Добавлен workflow релизов по тегам `vMAJOR.MINOR.PATCH`: JAR, исходники, POM и SHA-256. Для удалённого подключения подготовлен JitPack; [публичный репозиторий](https://github.com/GrozniyMax/concurrent-mockk) создан, первый релиз пока не выпущен. Примеры Gradle и Maven, команды выпуска и проверки описаны в [инструкции по релизам](docs/releases.md).
+Добавлен workflow релизов по тегам `vMAJOR.MINOR.PATCH`: JAR, исходники, POM и SHA-256. Для удалённого подключения подготовлен JitPack; [публичный репозиторий](https://github.com/GrozniyMax/concurrent-mockk) создан, релизные файлы доступны в [GitHub Releases](https://github.com/GrozniyMax/concurrent-mockk/releases). Примеры Gradle и Maven, команды выпуска и проверки описаны в [инструкции по релизам](docs/releases.md).
 
 ## Локальное подключение
 
@@ -127,7 +127,6 @@ junit.jupiter.execution.parallel.config.fixed.parallelism=4
 
 ## Следующие шаги
 
-- Выпустить первый тег для подготовленной конфигурации JitPack.
 - Рассмотреть поддержку аннотированных полей `@MockK`.
 - Отдельно исследовать перенос контекста между потоками и корутинами.
 

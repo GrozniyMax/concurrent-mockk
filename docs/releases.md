@@ -1,12 +1,12 @@
 # Релизы и установка
 
-Подготовлены два канала: GitHub Releases для скачивания файлов и JitPack для подключения зависимости из Gradle/Maven. Maven Central не настроен. Публичный репозиторий: [GrozniyMax/concurrent-mockk](https://github.com/GrozniyMax/concurrent-mockk). До публикации первого тега удалённой зависимости ещё нет.
+Подготовлены два канала: GitHub Releases для скачивания файлов и JitPack для подключения зависимости из Gradle/Maven. Maven Central не настроен. Публичный репозиторий: [GrozniyMax/concurrent-mockk](https://github.com/GrozniyMax/concurrent-mockk). Первый релиз: [v0.1.0](https://github.com/GrozniyMax/concurrent-mockk/releases/tag/v0.1.0). JitPack собирает зависимость по опубликованному тегу при первом запросе.
 
 ## Версии
 
 Версия разработки задаётся в gradle.properties: projectVersion=0.1.0-SNAPSHOT. Для стабильного релиза используйте тег vMAJOR.MINOR.PATCH. Workflow удаляет префикс v и передаёт версию в Gradle через -PreleaseVersion. Исходники Kotlin остаются в пакете com.grozniy.
 
-На JitPack группа и версия берутся из его переменных GROUP и VERSION. Для репозитория GrozniyMax/concurrent-mockk и тега v0.1.0 координаты будут com.github.GrozniyMax:concurrent-mockk:v0.1.0. Локальные публикации сохраняют группу com.grozniy.
+На JitPack группа и версия берутся из его переменных GROUP и VERSION. Для репозитория GrozniyMax/concurrent-mockk и тега v0.1.0 координаты com.github.GrozniyMax:concurrent-mockk:v0.1.0. Локальные публикации сохраняют группу com.grozniy.
 
 ## Проверка до публикации
 
@@ -82,7 +82,7 @@ tasks.test { useJUnitPlatform() }
 
 В Maven-проекте также должны быть настроены компиляция Kotlin-тестов и запуск JUnit 5. Зависимость подключает библиотеку; её импорт и использование одинаковы для Gradle и Maven.
 
-Если репозиторий будет создан под другим владельцем или именем, замените координаты и ссылки в этой инструкции. Никогда не помещайте токены в build-файлы или README.
+При переносе репозитория к другому владельцу замените координаты и ссылки в этой инструкции. Никогда не помещайте токены в build-файлы или README.
 
 ## Источники
 
