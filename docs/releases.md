@@ -1,6 +1,6 @@
 # Релизы и установка
 
-Подготовлены два канала: GitHub Releases для скачивания файлов и JitPack для подключения зависимости из Gradle/Maven. Maven Central не настроен. До публикации публичного репозитория и тега удалённой зависимости ещё нет.
+Подготовлены два канала: GitHub Releases для скачивания файлов и JitPack для подключения зависимости из Gradle/Maven. Maven Central не настроен. Публичный репозиторий: [GrozniyMax/concurrent-mockk](https://github.com/GrozniyMax/concurrent-mockk). До публикации первого тега удалённой зависимости ещё нет.
 
 ## Версии
 
@@ -19,7 +19,7 @@
 
 ## Выпуск
 
-1. Опубликуйте этот проект в публичном GitHub-репозитории и включите GitHub Actions.
+1. Используйте публичный репозиторий [GrozniyMax/concurrent-mockk](https://github.com/GrozniyMax/concurrent-mockk); workflow GitHub Actions уже загружен.
 2. Обновите CHANGELOG.md и выполните проверки выше.
 3. Закоммитьте изменения, отправьте ветку и создайте новый тег:
 
